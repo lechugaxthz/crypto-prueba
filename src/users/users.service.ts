@@ -3,6 +3,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { User } from 'src/database/entities/users.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import { WalletService } from 'src/wallet/wallet.service';
 
 @Injectable()
 export class UsersService {
@@ -11,6 +12,8 @@ export class UsersService {
     private dataSource: DataSource,
     @Inject(forwardRef((() => AuthService)))
     private authService: AuthService,
+    @Inject(forwardRef((() => WalletService)))
+    private walletService: WalletService,
     @InjectRepository(User)
     private userModel: Repository<User>
   ) { }
@@ -23,15 +26,21 @@ export class UsersService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
+      const wallet = await this.walletService.createWallet();
+
       const newUser = this.userModel.create({
         user: user.user,
-        password: hashedPassword
-      })
-      await this.userModel.save(newUser)
-      await queryRunner.commitTransaction()
+        password: hashedPassword,
+        wallet
+      });
+
+      /* llamo a crear cada crypto wallet con 0 cant por cada crypto existente */
+      await this.walletService.createCryptoWallet(wallet);
+      await this.userModel.save(newUser);
+      await queryRunner.commitTransaction();
     } catch (error) {
-      await queryRunner.rollbackTransaction()
-      throw new BadRequestException('No se pudo crear al usuario.', { cause: error.message })
+      await queryRunner.rollbackTransaction();
+      throw new BadRequestException('No se pudo crear al usuario.' + error.message, { cause: error.message });
     } finally {
       await queryRunner.release();
     }
@@ -41,4 +50,27 @@ export class UsersService {
     return await this.userModel.findOne({ where: { user } })
   }
 
+  async findUserById(id: string) {
+    return await this.userModel.findOne({
+      where: { id },
+      select: {
+        id: true,
+        user: true,
+        wallet: {
+          id: true,
+          cryptoWallet: {
+            id: true,
+            amount: true,
+            crypto: {
+              id: true,
+              name: true,
+              ticker: true,
+              buyPrice: true
+            }
+          }
+        }
+      },
+      relations: ['wallet', 'wallet.cryptoWallet', 'wallet.cryptoWallet.crypto']
+    })
+  }
 }

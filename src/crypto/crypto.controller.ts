@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { CryptoService } from './crypto.service';
 
 @Controller('crypto')
@@ -11,22 +11,17 @@ export class CryptoController {
   }
 
   @Get()
-  findAll() {
-    return this.cryptoService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.cryptoService.findOne(+id);
+  findAll(@Query('cant') cant: number, @Query('page') page: number) {
+    return this.cryptoService.paginatedAll({ cant, page });
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCryptoDto) {
-    return this.cryptoService.update(+id, updateCryptoDto);
+  update(@Param('id') id: string, @Body() updateCrypto) {
+    return this.cryptoService.update({ id, ...updateCrypto });
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.cryptoService.remove(+id);
+    return this.cryptoService.remove(id);
   }
 }

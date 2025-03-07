@@ -9,7 +9,7 @@ export class CryptoWallet {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, default: 0 })
     amount: number;
 
     @ManyToOne(() => Crypto, (crypto: Crypto) => crypto.cryptoWallet)

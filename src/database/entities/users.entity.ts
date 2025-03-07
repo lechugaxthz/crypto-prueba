@@ -1,4 +1,5 @@
-import { AfterInsert, Column, DataSource, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { AfterInsert, Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, Repository } from "typeorm";
+import { DataSource } from "typeorm";
 import { Wallet } from "./wallet.entity";
 
 @Entity({
@@ -17,10 +18,4 @@ export class User {
     @OneToOne(() => Wallet)
     @JoinColumn()
     wallet: Wallet;
-
-    @AfterInsert()
-    async addWalletAndCrypto() {
-        this.wallet = new Wallet()
-        
-    }
 }
